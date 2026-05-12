@@ -37,7 +37,6 @@ pipeline {
             }
         }
     }
-
     post {
         success {
             echo "Tebrikler Kral! Pipeline başarıyla tamamlandı ve uygulama güncellendi."
