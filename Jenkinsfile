@@ -1,22 +1,21 @@
 pipeline {
     agent any
+    environment {
+        DOCKER_HUB_USER = 'devarsyf'
+    }
     stages {
-        stage('Checkout') {
+        stage('Build & Tag') {
             steps {
-                checkout scm
+                sh "docker build -t ${DOCKER_HUB_USER}/ilk-uygulamam:latest ."
             }
         }
-        stage('Build Image') {
+        stage('Login & Push') {
             steps {
-                sh 'docker build -t benim-uygulamam:latest .'
-            }
-        }
-        stage('Deploy') {
-            steps {
-                // Önce çalışan eski bir konteyner varsa onu durdurup silelim ki port çakışmasın
-                sh 'docker rm -f benim-app-konteyner || true'
-                // Şimdi yeni imajı 8081 portundan ayağa kaldıralım (8080 Jenkins'e ait)
-                sh 'docker run -d --name benim-app-konteyner -p 8081:80 benim-uygulamam:latest'
+                // Jenkins'e tanıttığımız credential'ı güvenli şekilde çağırıyoruz
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_HUB_PASSWORD', usernameVariable: 'DOCKER_HUB_USERNAME')]) {
+                    sh "echo \$DOCKER_HUB_PASSWORD | docker login -u \$DOCKER_HUB_USERNAME --password-stdin"
+                    sh "docker push ${DOCKER_HUB_USER}/ilk-uygulamam:latest"
+                }
             }
         }
     }
